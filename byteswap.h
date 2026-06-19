@@ -2,6 +2,13 @@
 #include <cstdint>
 #include <cstring>
 
+inline uint16_t byteswap( uint16_t value )
+{
+	return
+		((value & 0xFF00) >> 8 ) |
+		((value & 0x00FF) << 8 );
+}
+
 inline uint32_t byteswap( uint32_t value )
 {
 	return

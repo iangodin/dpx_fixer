@@ -35,6 +35,7 @@ int main( int argc, char *argv[] )
 	int result = 0;
 
 	std::cout << "Processing frames " << start_frame << " to " << end_frame << '\n';
+	std::cout << "Setting FPS to 24 in all output DPX files!\n";
 	for ( int frame = start_frame; frame <= end_frame; ++frame )
 	{
 		try
@@ -50,7 +51,6 @@ int main( int argc, char *argv[] )
 
 			// Read DPX header
 			DpxHeader header = read_header( inputFile, inputFilename );
-			std::cout << header << '\n';
 
 			// Check that the image is something we can handle...
 			if ( header.image.element_count != 1 )
@@ -98,7 +98,6 @@ int main( int argc, char *argv[] )
 
 			// Strip alpha channel
 			image = pack_10bits( demangle( unpack_10bits( image, imagePels ) ) );
-			std::cerr << "PIXELS: " << image.size() << std::endl;
 
 			// Fix up the header
 			clean_header( header );
@@ -114,6 +113,8 @@ int main( int argc, char *argv[] )
 			header.image.elements[0].colorimetric = Colorimetric::PRINTING_DENSITY;
 			header.image.elements[0].colorimetric = Colorimetric::PRINTING_DENSITY;
 
+			header.film_info.frame_rate = 24.0;
+
 			// Open output DPX file
 			const std::string outputFilename = compose_filename( output, frame );
 			std::fstream outputFile( outputFilename, std::ios_base::binary | std::ios_base::out | std::ios_base::trunc );
@@ -124,9 +125,10 @@ int main( int argc, char *argv[] )
 			outputFile.exceptions( std::ios_base::failbit | std::ios_base::badbit );
 
 			write_header( outputFile, header );
-			std::cout << "After header: " << outputFile.tellp() << std::endl;
 			outputFile.write( reinterpret_cast<char*>( image.data() ), sizeof( uint32_t ) * image.size() );
 			outputFile.close();
+
+			std::cout << "Fixed " << inputFilename << " -> " << outputFilename << '\n';
 		}
 		catch ( std::exception &e )
 		{

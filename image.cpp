@@ -29,8 +29,6 @@ std::vector<uint16_t> unpack_10bits( const std::vector<uint32_t> &data, size_t p
 			result.push_back( static_cast<uint16_t>( ( value >> 22 ) & 0x3FF ) );
 	}
 
-	std::cerr << "unpacked: " << result.size() << std::endl;
-
 	return result;
 }
 
@@ -49,8 +47,6 @@ std::vector<uint16_t> strip_alpha( const std::vector<uint16_t> &rgba )
 		result.push_back( rgba.at( i + 1 ) );
 		result.push_back( rgba.at( i + 2 ) );
 	}
-
-	std::cerr << "stripped: " << result.size() << std::endl;
 
 	return result;
 }
@@ -81,8 +77,6 @@ std::vector<uint16_t> demangle( const std::vector<uint16_t> &rgba )
 	result.push_back( 0 );
 	result.push_back( 0 );
 	result.push_back( 0 );
-
-	std::cerr << "demangled: " << result.size() << std::endl;
 
 	return result;
 }

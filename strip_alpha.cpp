@@ -42,7 +42,7 @@ int safemain( int argc, char *argv[] )
 	CLI::App app( "Strip Alpha" );
 	argv = app.ensure_utf8( argv );
 
-	float fps = 0.F;
+	float fps = -1.F;
 	std::string input;
 	std::string output;
 	int start_frame = -1;
@@ -59,7 +59,7 @@ int safemain( int argc, char *argv[] )
 	int result = 0;
 
 	std::cout << "Processing frames " << start_frame << " to " << end_frame << '\n';
-	if ( fps != 0.F )
+	if ( fps >= 0.F )
 	{
 		std::cout << "Setting FPS to " << fps << " in all output DPX files!\n";
 	}
@@ -139,9 +139,11 @@ int safemain( int argc, char *argv[] )
 			header.image.elements[0].high_quantity = 2.047;
 			header.image.elements[0].transfer = Transfer::PRINTING_DENSITY;
 			header.image.elements[0].colorimetric = Colorimetric::PRINTING_DENSITY;
-			header.image.elements[0].colorimetric = Colorimetric::PRINTING_DENSITY;
 
-			header.film_info.frame_rate = fps;
+			if ( fps >= 0.F )
+			{
+				header.film_info.frame_rate = fps;
+			}
 
 			// Open output DPX file
 			const std::string outputFilename = compose_filename( output, frame );

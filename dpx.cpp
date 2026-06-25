@@ -284,6 +284,7 @@ std::string colorimetric_name( Colorimetric colorimetric )
 	switch ( colorimetric )
 	{
 		case Colorimetric::USER_DEFINED: return "User-defined";
+		case Colorimetric::PRINTING_DENSITY_LEGACY: return "Printing density (Legacy)";
 		case Colorimetric::PRINTING_DENSITY: return "Printing density";
 		case Colorimetric::UNSPECIFIED_VIDEO: return "Unspecified video";
 		case Colorimetric::SMPTE_240M: return "SMPTE 240M";

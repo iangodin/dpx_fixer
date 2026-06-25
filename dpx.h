@@ -212,6 +212,8 @@ inline float dpx_undefined_float( void )
 
 #pragma pack( pop )
 
+std::string descriptor_name( Descriptor descriptor );
+
 bool is_big_endian( const FileInformation &file_info );
 void swap_bytes( FileInformation &file_info );
 void swap_bytes( ImageHeader &image );

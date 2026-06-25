@@ -79,11 +79,13 @@ int safemain( int argc, char *argv[] )
 			// Read DPX header
 			DpxHeader header = read_header( inputFile, inputFilename );
 
+
 			// Check that the image is something we can handle...
 			if ( header.image.element_count != 1 )
 			{
-				throw std::runtime_error( "Expected one element in image" );
+				throw std::runtime_error( "expected one element in image, got " + std::to_string( header.image.element_count ) );
 			}
+
 			if ( header.image.elements[0].data_sign != 0 )
 			{
 				throw std::runtime_error( "Expected image element to be unsigned" );
@@ -104,10 +106,6 @@ int safemain( int argc, char *argv[] )
 			{
 				throw std::runtime_error( "Expected image element to not have padding at end of line" );
 			}
-			if ( header.image.elements[0].descriptor != Descriptor::RGBA )
-			{
-				throw std::runtime_error( "Expected image element to be RGBA" );
-			}
 
 			// Read image data
 			size_t pixels = header.image.pixels_per_line * header.image.lines_per_element;
@@ -118,13 +116,22 @@ int safemain( int argc, char *argv[] )
 				throw std::runtime_error( "Data size is not a multiple of 4 bytes, got " + std::to_string( dataBytes ) );
 			}
 
-			std::vector<uint32_t> image;
 			size_t elements = dataBytes / 4;
+			std::vector<uint32_t> image;
 			image.resize( elements );
 			inputFile.read( reinterpret_cast<char *>( image.data() ), sizeof( uint32_t ) * elements );
 
 			// Strip alpha channel
-			image = pack_10bits( demangle( unpack_10bits( image, imagePels ) ) );
+			if ( header.image.elements[0].descriptor == Descriptor::RGBA )
+			{
+				image = pack_10bits( demangle( unpack_10bits( image, imagePels ) ) );
+				header.image.elements[0].descriptor = Descriptor::RGB;
+			}
+
+			if ( header.image.elements[0].descriptor != Descriptor::RGB )
+			{
+				throw std::runtime_error( "unknown descriptor in DPX file: " + descriptor_name( header.image.elements[0].descriptor ) );
+			}
 
 			// Fix up the header
 			clean_header( header );

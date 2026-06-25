@@ -1,6 +1,7 @@
 
 #include "dpx.h"
 #include "image.h"
+#include "CLI11.hpp"
 
 #include <stdexcept>
 #include <iostream>
@@ -18,23 +19,49 @@ std::string compose_filename( const std::string &format, int frame )
 	return filename;
 }
 
+int safemain( int argc, char *argv[] );
+
 int main( int argc, char *argv[] )
 {
-	if ( argc != 4 )
+	int result = 255;
+	try
 	{
-		std::cerr << "Usage:\n";
-		std::cerr << "\t" << argv[0] << " image_%08d.dpx first_frame last_frame\n";
-		return -1;
+		result = safemain( argc, argv );
+	}
+	catch ( std::exception &e )
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+		result = 255;
 	}
 
-	const std::string input = argv[1];
-	const int start_frame = std::stoi( argv[2] );
-	const int end_frame = std::stoi( argv[3] );
+	return result;
+}
+
+int safemain( int argc, char *argv[] )
+{
+	CLI::App app( "Strip Alpha" );
+	argv = app.ensure_utf8( argv );
+
+	float fps = -1.F;
+	std::string input;
+	int start_frame = -1;
+	int end_frame = -1;
+
+	app.add_option( "--fps", fps, "Frame rate to set in the header information" );
+	app.add_option( "input", input, "Input filename (e.g. input_%07d.dpx)" )->required();
+	app.add_option( "first_frame", start_frame, "First frame in the sequence to process" )->required();
+	app.add_option( "last_frame", end_frame, "Last frame in the sequence to process" )->required();
+
+	CLI11_PARSE( app, argc, argv );
 
 	int result = 0;
 
 	std::cout << "Processing frames " << start_frame << " to " << end_frame << '\n';
-	std::cout << "Setting FPS to 24 in all output DPX files!\n";
+	if ( fps >= 0.F )
+	{
+		std::cout << "Setting FPS to " << fps << " in all output DPX files!\n";
+	}
+
 	for ( int frame = start_frame; frame <= end_frame; ++frame )
 	{
 		try
@@ -74,14 +101,9 @@ int main( int argc, char *argv[] )
 			{
 				throw std::runtime_error( "Expected image element to not be encoded" );
 			}
-			if ( header.image.elements[0].descriptor == Descriptor::RGBA )
-			{
-				std::cerr << "Changing descriptor to RGB" << std::endl;
-				header.image.elements[0].descriptor = Descriptor::RGB;
-			}
 			if ( header.image.elements[0].descriptor != Descriptor::RGB )
 			{
-				throw std::runtime_error( "Expected image element to RGB or RGBA" );
+				throw std::runtime_error( "Expected image element descriptor to be RGB, got " + descriptor_name( header.image.elements[0].descriptor ) );
 			}
 
 			// Fix up the header
@@ -95,9 +117,11 @@ int main( int argc, char *argv[] )
 			header.image.elements[0].high_quantity = 2.047;
 			header.image.elements[0].transfer = Transfer::PRINTING_DENSITY;
 			header.image.elements[0].colorimetric = Colorimetric::PRINTING_DENSITY;
-			header.image.elements[0].colorimetric = Colorimetric::PRINTING_DENSITY;
 
-			header.film_info.frame_rate = 24.0;
+			if ( fps >= 0.F )
+			{
+				header.film_info.frame_rate = fps;
+			}
 
 			// Open output DPX file
 			const std::string outputFilename = inputFilename;
@@ -116,7 +140,7 @@ int main( int argc, char *argv[] )
 		catch ( std::exception &e )
 		{
 			std::cerr << "Error: " << e.what() << std::endl;
-			result = -1;
+			result = 255;
 		}
 	}
 

@@ -1,6 +1,7 @@
 
 #include "dpx.h"
 #include "image.h"
+#include "CLI11.hpp"
 
 #include <stdexcept>
 #include <iostream>
@@ -18,24 +19,50 @@ std::string compose_filename( const std::string &format, int frame )
 	return filename;
 }
 
+int safemain( int argc, char *argv[] );
+
 int main( int argc, char *argv[] )
 {
-	if ( argc != 5 )
+	int result = 255;
+	try
 	{
-		std::cerr << "Usage:\n";
-		std::cerr << "\t" << argv[0] << " input_%08d.dpx output_%08d.dpx first_frame last_frame\n";
-		return -1;
+		result = safemain( argc, argv );
+	}
+	catch ( std::exception &e )
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+		result = 255;
 	}
 
-	const std::string input = argv[1];
-	const std::string output = argv[2];
-	const int start_frame = std::stoi( argv[3] );
-	const int end_frame = std::stoi( argv[4] );
+	return result;
+}
+
+int safemain( int argc, char *argv[] )
+{
+	CLI::App app( "Strip Alpha" );
+	argv = app.ensure_utf8( argv );
+
+	float fps = 0.F;
+	std::string input;
+	std::string output;
+	int start_frame = -1;
+	int end_frame = -1;
+
+	app.add_option( "--fps", fps, "Frame rate to set in the header information" );
+	app.add_option( "input", input, "Input filename (e.g. input_%07d.dpx)" )->required();
+	app.add_option( "output", output, "Output filename (e.g. output_%07d.dpx)" )->required();
+	app.add_option( "first_frame", start_frame, "First frame in the sequence to process" )->required();
+	app.add_option( "last_frame", end_frame, "Last frame in the sequence to process" )->required();
+
+	CLI11_PARSE( app, argc, argv );
 
 	int result = 0;
 
 	std::cout << "Processing frames " << start_frame << " to " << end_frame << '\n';
-	std::cout << "Setting FPS to 24 in all output DPX files!\n";
+	if ( fps != 0.F )
+	{
+		std::cout << "Setting FPS to " << fps << " in all output DPX files!\n";
+	}
 	for ( int frame = start_frame; frame <= end_frame; ++frame )
 	{
 		try
@@ -103,6 +130,7 @@ int main( int argc, char *argv[] )
 			clean_header( header );
 
 			header.file_info.version[1] = '1';
+			header.file_info.file_size = image.size() * sizeof(uint32_t) + header.file_info.image_offset;
 
 			header.image.elements[0].descriptor = Descriptor::RGB;
 			header.image.elements[0].low_data = 0;
@@ -113,7 +141,7 @@ int main( int argc, char *argv[] )
 			header.image.elements[0].colorimetric = Colorimetric::PRINTING_DENSITY;
 			header.image.elements[0].colorimetric = Colorimetric::PRINTING_DENSITY;
 
-			header.film_info.frame_rate = 24.0;
+			header.film_info.frame_rate = fps;
 
 			// Open output DPX file
 			const std::string outputFilename = compose_filename( output, frame );
@@ -133,7 +161,7 @@ int main( int argc, char *argv[] )
 		catch ( std::exception &e )
 		{
 			std::cerr << "Error: " << e.what() << std::endl;
-			result = -1;
+			result = 255;
 		}
 	}
 

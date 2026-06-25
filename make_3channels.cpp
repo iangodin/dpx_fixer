@@ -109,14 +109,14 @@ int safemain( int argc, char *argv[] )
 			// Fix up the header
 			clean_header( header );
 
-			header.file_info.version[1] = '1';
+			header.file_info.version[1] = '3';
 
 			header.image.elements[0].low_data = 0;
 			header.image.elements[0].low_quantity = 0.0;
 			header.image.elements[0].high_data = 1023;
 			header.image.elements[0].high_quantity = 2.047;
-			header.image.elements[0].transfer = Transfer::PRINTING_DENSITY;
-			header.image.elements[0].colorimetric = Colorimetric::PRINTING_DENSITY;
+			header.image.elements[0].transfer = Transfer::LOGARITHMIC;
+			header.image.elements[0].colorimetric = Colorimetric::USER_DEFINED;
 
 			if ( fps >= 0.F )
 			{
